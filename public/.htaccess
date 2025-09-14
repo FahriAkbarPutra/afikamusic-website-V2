@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# Baris baru untuk me-redirect otomatis pengunjung dari / ke /home
+RedirectMatch ^/afika-music/public/$ /afika-music/public/home
+
+# Aturan yang sudah ada
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]

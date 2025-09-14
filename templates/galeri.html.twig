@@ -1,0 +1,27 @@
+{% extends "layout.html.twig" %}
+
+{% block content %}
+    <h1>Galeri Media</h1>
+    <p>Dokumentasi dari berbagai acara yang telah kami dukung.</p>
+
+    <style>
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 30px; }
+        .gallery-item { border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background-color: var(--bg-secondary); text-align: center; }
+        .gallery-item iframe { width: 100%; height: 200px; border: none; }
+        .gallery-item p { padding: 10px; margin: 0; font-weight: bold; }
+    </style>
+
+    <div class="gallery-grid">
+        {% for file in files %}
+            <div class="gallery-item">
+                {# Selalu gunakan iframe dengan URL /preview untuk semua file #}
+                <iframe src="https://drive.google.com/file/d/{{ file.file_id }}/preview"></iframe>
+                
+                <p>{{ file.file_name }}</p>
+            </div>
+        {% else %}
+            <p>Belum ada media di galeri.</p>
+        {% endfor %}
+    </div>
+
+{% endblock %}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title|default('Afika Audio Production') }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/afika-music/public/assets/css/style.css">
+</head>
+<body>
+    <div id="wave-container">
+        <svg id="waves" width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg">
+            <path id="wave1" d="" stroke="#DFFF00" fill="none" stroke-width="1.5"></path>
+            <path id="wave2" d="" stroke="#DFFF00" fill="none" stroke-width="1.5"></path>
+            <path id="wave3" d="" stroke="#DFFF00" fill="none" stroke-width="1.5"></path>
+        </svg>
+    </div>
+    <header>
+        <div class="logo">
+            <a href="/afika-music/public/home">
+                <img src="/afika-music/public/assets/images/logo.png" alt="Afika Music Logo" style="height: 50px;">
+            </a>
+        </div>
+        <div class="nav-container" id="nav-container">
+            <div class="nav-center">
+                <nav>
+                    <a href="/afika-music/public/home">Beranda</a>
+                    <a href="/afika-music/public/layanan">Layanan</a>
+                    <a href="/afika-music/public/galeri">Galeri</a>
+                    <a href="/afika-music/public/jadwal">Jadwal</a>
+                </nav>
+            </div>
+            <div class="nav-right">
+                 <a href="/afika-music/public/booking">Booking & Kontak</a>
+            </div>
+        </div>
+        <button id="mobile-menu-button" class="mobile-menu-button">
+            <span class="line"></span>
+            <span class="line"></span>
+            <span class="line"></span>
+        </button>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        <div class="container">
+            <p>&copy; {{ "now"|date("Y") }} Afika Audio Production.</p>
+        </div>
+    </footer>
+    <script src="/afika-music/public/assets/js/main.js"></script>
+</body>
+</html>

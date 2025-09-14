@@ -1,0 +1,163 @@
+/*
+==============================================
+CSS LENGKAP - Desain Sederhana + Gelombang
+==============================================
+*/
+
+:root {
+    --bg-dark: #121212;
+    --bg-card: #1E1E1E;
+    --text-primary: #FFFFFF;
+    --text-secondary: #AAAAAA;
+    --color-accent-yellow: #DFFF00;
+    --color-accent-cyan: #00BFFF;
+    --border-color: #2A2A2A;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    margin: 0;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    overflow-x: hidden; /* Mencegah scroll horizontal */
+}
+
+/* BACKGROUND ANIMASI */
+#wave-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    z-index: -1;
+}
+#waves path {
+    stroke-width: 1.5px; /* Garis tipis dan tegas */
+}
+
+
+/* HEADER & NAVIGASI */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: var(--bg-dark);
+    border-bottom: 1px solid var(--border-color);
+}
+nav a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-weight: bold;
+    transition: color 0.3s;
+}
+nav a:hover { color: var(--text-primary); }
+
+/* HERO SECTION */
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80vh;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 20px;
+}
+.hero h1 {
+    font-size: 3.5em;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+.hero p {
+    font-size: 1.2em;
+    margin-bottom: 30px;
+    max-width: 600px;
+}
+.btn-cta {
+    padding: 15px 35px;
+    font-size: 1.1em;
+    background-color: var(--color-accent-cyan);
+    color: var(--bg-dark);
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.btn-cta:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 191, 255, 0.2);
+}
+
+/* SECTION UMUM */
+.section {
+    padding: 80px 0;
+}
+.section-title {
+    text-align: center;
+    font-size: 2.5em;
+    margin-bottom: 50px;
+    font-weight: 700;
+}
+
+/* CARD LAYANAN */
+.featured-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+}
+.service-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    text-align: left;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+.service-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+}
+.service-card-content {
+    padding: 25px;
+}
+.service-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.3em;
+}
+.service-card .price {
+    font-weight: bold;
+    color: var(--color-accent-cyan);
+    margin-bottom: 20px;
+    font-size: 1.2em;
+}
+.btn-primary {
+    background-color: var(--color-accent-cyan);
+    color: var(--bg-dark);
+}
+
+/* FOOTER */
+footer {
+    text-align: center;
+    padding: 40px 20px;
+    margin-top: 60px;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}

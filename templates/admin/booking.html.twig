@@ -1,0 +1,61 @@
+{% extends "layout.html.twig" %}
+
+{% block content %}
+    <h1>Booking Layanan / Hubungi Kami</h1>
+    <p>Silakan isi formulir di bawah ini untuk melakukan pemesanan atau bertanya lebih lanjut. Tim kami akan segera menghubungi Anda untuk konfirmasi.</p>
+
+    <style>
+        .booking-container { display: flex; gap: 40px; margin-top: 30px; }
+        .booking-form { flex: 2; }
+        .contact-info { flex: 1; background-color: var(--bg-secondary); padding: 20px; border-radius: 8px; }
+        .form-row { display: flex; gap: 20px; }
+        .form-row .form-group { flex: 1; }
+    </style>
+
+    <div class="booking-container">
+        <div class="booking-form">
+            <h2>Formulir Pemesanan</h2>
+            <form action="/afika-music/public/booking" method="POST">
+                <div class="form-group">
+                    <label for="name">Nama Lengkap</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Nomor HP (WhatsApp)</label>
+                    <input type="tel" id="phone" name="phone" required placeholder="Contoh: 081234567890">
+                </div>
+                <div class="form-group">
+                    <label for="service_id">Pilih Layanan / Paket</label>
+                    <select id="service_id" name="service_id" required>
+                        <option value="">-- Pilih Paket --</option>
+                        {# Kita akan mengisi ini dengan data dari database #}
+                        {% for service in services %}
+                            <option value="{{ service.id }}">{{ service.name }} - (Rp {{ service.price|number_format(0, ',', '.') }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="booking_date">Tanggal Acara</label>
+                    <input type="date" id="booking_date" name="booking_date" required>
+                </div>
+                <div class="form-group">
+                    <label for="address">Alamat Lengkap Acara</label>
+                    <textarea id="address" name="address" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="message">Pesan Tambahan (Opsional)</label>
+                    <textarea id="message" name="message" rows="3" placeholder="Contoh: Kebutuhan daya listrik, request lagu, dll."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Kirim Permintaan Booking</button>
+            </form>
+        </div>
+        <div class="contact-info">
+            <h2>Info Kontak</h2>
+            <p><strong>Telepon/WA 1:</strong><br>0812-3909-2400</p>
+            <p><strong>Telepon/WA 2:</strong><br>0813-6531-6950</p>
+            <p><strong>Alamat Workshop:</strong><br>Jl. [Alamat Lengkap Anda di Sini], Bandung</p>
+            <p><strong>Jam Buka:</strong><br>Senin - Sabtu (09:00 - 17:00)</p>
+            {# Di sini nanti kita letakkan peta #}
+        </div>
+    </div>
+{% endblock %}

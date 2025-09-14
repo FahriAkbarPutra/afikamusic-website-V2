@@ -1,0 +1,39 @@
+{% extends "admin/layout.html.twig" %}
+
+{% block content %}
+    <div style="margin-bottom: 20px;">
+        <a href="/admin/services/new" class="btn btn-primary">Tambah Layanan Baru</a>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nama Layanan</th>
+                <th>Harga</th>
+                <th>Status</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {# Loop untuk setiap service dari database #}
+            {% for service in services %}
+            <tr>
+                <td>{{ service.name }}</td>
+                <td>Rp {{ service.price|number_format(0, ',', '.') }}</td>
+                <td>{{ service.is_active ? 'Aktif' : 'Non-Aktif' }}</td>
+                <td>
+                    <a href="/admin/services/edit/{{ service.id }}" class="btn btn-warning">Edit</a>
+                    {# Form kecil untuk tombol hapus agar lebih aman #}
+                    <form action="/admin/services/delete/{{ service.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus layanan ini?');">
+                        <button type="submit" class="btn btn-danger">Hapus</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" style="text-align:center;">Belum ada layanan.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
