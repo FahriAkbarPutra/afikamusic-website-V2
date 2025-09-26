@@ -1,37 +1,40 @@
 {% extends "admin/layout.html.twig" %}
 
 {% block content %}
-    {# `service.id` akan ada jika ini adalah form edit #}
-    <form action="{{ service.id ? '/admin/services/edit/' ~ service.id : '/admin/services/new' }}" method="POST">
-        <div class="form-group">
-            <label for="name">Nama Layanan</label>
-            <input type="text" id="name" name="name" value="{{ service.name }}" required>
-        </div>
-        
-        <div class="form-group">
-            <label for="price">Harga (Rp)</label>
-            <input type="number" id="price" name="price" value="{{ service.price }}" required>
-        </div>
+    <div class="form-card">
+        <form action="{{ service.id ? base_path ~ '/admin/services/edit/' ~ service.id : base_path ~ '/admin/services/new' }}" method="POST" style="display:grid; gap:20px;">
+            <div class="form-group">
+                <label for="name">Nama Layanan</label>
+                <input type="text" id="name" name="name" value="{{ service.name }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="price">Harga (Rp)</label>
+                <input type="number" id="price" name="price" value="{{ service.price }}" min="0" required>
+            </div>
 
-        <div class="form-group">
-            <label for="description">Deskripsi</label>
-            <textarea id="description" name="description" rows="5">{{ service.description }}</textarea>
-        </div>
+            <div class="form-group">
+                <label for="description">Deskripsi</label>
+                <textarea id="description" name="description" rows="5" placeholder="Tuliskan highlight layanan">{{ service.description }}</textarea>
+            </div>
 
-        <div class="form-group">
-            <label for="notes">Catatan (Apa saja yang termasuk paket?)</label>
-            <textarea id="notes" name="notes" rows="5">{{ service.notes }}</textarea>
-        </div>
+            <div class="form-group">
+                <label for="notes">Catatan (Apa saja yang termasuk paket?)</label>
+                <textarea id="notes" name="notes" rows="4">{{ service.notes }}</textarea>
+            </div>
 
-        <div class="form-group">
-            <label for="is_active">Status</label>
-            <select id="is_active" name="is_active">
-                <option value="1" {{ service.is_active == 1 ? 'selected' : '' }}>Aktif</option>
-                <option value="0" {{ service.is_active == 0 ? 'selected' : '' }}>Non-Aktif</option>
-            </select>
-        </div>
+            <div class="form-group">
+                <label for="is_active">Status</label>
+                <select id="is_active" name="is_active">
+                    <option value="1" {{ service.is_active == 1 ? 'selected' : '' }}>Aktif</option>
+                    <option value="0" {{ service.is_active == 0 ? 'selected' : '' }}>Non-Aktif</option>
+                </select>
+            </div>
 
-        <button type="submit" class="btn btn-primary">Simpan Layanan</button>
-        <a href="/admin/services" style="margin-left: 10px;">Batal</a>
-    </form>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                <button type="submit" class="btn btn-primary">Simpan Layanan</button>
+                <a href="{{ base_path }}/admin/services" class="btn btn-warning" style="text-decoration:none;">Batal</a>
+            </div>
+        </form>
+    </div>
 {% endblock %}

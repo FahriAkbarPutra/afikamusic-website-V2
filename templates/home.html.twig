@@ -1,55 +1,110 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page_title|default('Afika Audio Production') }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/afika-music/public/assets/css/style.css">
-</head>
-<body>
-    <div id="wave-container">
-        <svg id="waves" width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg">
-            <path id="wave1" d="" stroke="#DFFF00" fill="none" stroke-width="1.5"></path>
-            <path id="wave2" d="" stroke="#DFFF00" fill="none" stroke-width="1.5"></path>
-            <path id="wave3" d="" stroke="#DFFF00" fill="none" stroke-width="1.5"></path>
-        </svg>
-    </div>
-    <header>
-        <div class="logo">
-            <a href="/afika-music/public/home">
-                <img src="/afika-music/public/assets/images/logo.png" alt="Afika Music Logo" style="height: 50px;">
-            </a>
-        </div>
-        <div class="nav-container" id="nav-container">
-            <div class="nav-center">
-                <nav>
-                    <a href="/afika-music/public/home">Beranda</a>
-                    <a href="/afika-music/public/layanan">Layanan</a>
-                    <a href="/afika-music/public/galeri">Galeri</a>
-                    <a href="/afika-music/public/jadwal">Jadwal</a>
-                </nav>
-            </div>
-            <div class="nav-right">
-                 <a href="/afika-music/public/booking">Booking & Kontak</a>
+{% extends 'layout.html.twig' %}
+
+{% block content %}
+    <section class="hero fade-in-section">
+        <div class="hero-content">
+            <h1>Audio Profesional untuk Setiap Momen</h1>
+            <p>Sound system, lighting, dan produksi audio modern untuk event, konser, dan kebutuhan komersial Anda.</p>
+            <div style="display:flex; gap:12px; justify-content:center; margin-top:10px;">
+                <a href="{{ base_path }}/booking" class="btn-cta">Booking Sekarang</a>
+                <a href="{{ base_path }}/layanan" class="btn-secondary">Lihat Layanan</a>
             </div>
         </div>
-        <button id="mobile-menu-button" class="mobile-menu-button">
-            <span class="line"></span>
-            <span class="line"></span>
-            <span class="line"></span>
-        </button>
-    </header>
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-    <footer>
+    </section>
+
+    <!-- Trusted by logos strip -->
+    <section class="section fade-in-section" aria-label="Dipercaya oleh">
         <div class="container">
-            <p>&copy; {{ "now"|date("Y") }} Afika Audio Production.</p>
+            <div class="logos-strip">
+                <div class="logos-track">
+                    <img src="{{ base_path }}/assets/images/logos/microsoft.svg" alt="Microsoft">
+                    <img src="{{ base_path }}/assets/images/logos/redhat.svg" alt="Red Hat">
+                    <img src="{{ base_path }}/assets/images/logos/arm.svg" alt="Arm">
+                    <img src="{{ base_path }}/assets/images/logos/atlassian.svg" alt="Atlassian">
+                    <img src="{{ base_path }}/assets/images/logos/mongodb.svg" alt="MongoDB">
+                    <img src="{{ base_path }}/assets/images/logos/mercedes.svg" alt="Mercedes-Benz">
+                    <!-- duplicate for seamless loop -->
+                    <img src="{{ base_path }}/assets/images/logos/microsoft.svg" alt="Microsoft">
+                    <img src="{{ base_path }}/assets/images/logos/redhat.svg" alt="Red Hat">
+                    <img src="{{ base_path }}/assets/images/logos/arm.svg" alt="Arm">
+                    <img src="{{ base_path }}/assets/images/logos/atlassian.svg" alt="Atlassian">
+                    <img src="{{ base_path }}/assets/images/logos/mongodb.svg" alt="MongoDB">
+                    <img src="{{ base_path }}/assets/images/logos/mercedes.svg" alt="Mercedes-Benz">
+                </div>
+            </div>
         </div>
-    </footer>
-    <script src="/afika-music/public/assets/js/main.js"></script>
-</body>
-</html>
+    </section>
+
+    <section class="section fade-in-section">
+        <div class="container">
+            <h2 class="section-title">Layanan Unggulan</h2>
+            <div class="featured-grid">
+                {% for service in featured_services %}
+                    <div class="service-card">
+                        {% if service.image_url %}
+                            <img src="{{ service.image_url }}" alt="{{ service.name }}">
+                        {% endif %}
+                        <div class="service-card-content">
+                            <h3>{{ service.name }}</h3>
+                            <div class="price">Rp {{ service.price|number_format(0, ',', '.') }}</div>
+                            {% if service.description %}
+                                <p style="color: var(--text-secondary); line-height: 1.6;">{{ service.description|slice(0, 120) }}{% if service.description|length > 120 %}...{% endif %}</p>
+                            {% endif %}
+                            <div style="margin-top: 16px; display:flex; gap:10px;">
+                                <a href="{{ base_path }}/booking" class="btn-cta">Pesan</a>
+                                <a href="{{ base_path }}/layanan" class="btn-secondary">Detail</a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <p style="text-align:center; color: var(--text-secondary);">Belum ada layanan unggulan yang ditampilkan.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature panels similar to Adoptium's benefits -->
+    <section class="section fade-in-section">
+        <div class="container feature-panels">
+            <div class="feature-panel">
+                <h3>Performa & Keandalan</h3>
+                <p>Sistem audio yang stabil, bersih, dan bertenaga untuk berbagai skala acara.</p>
+            </div>
+            <div class="feature-panel">
+                <h3>Efisiensi Biaya</h3>
+                <p>Paket fleksibel tanpa kompromi kualitas, sesuai kebutuhan dan anggaran Anda.</p>
+            </div>
+            <div class="feature-panel">
+                <h3>Memberdayakan Kreativitas</h3>
+                <p>Tim profesional yang membantu mewujudkan pengalaman audio-visual terbaik.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section fade-in-section">
+        <div class="container">
+            <h2 class="section-title">Galeri Terkini</h2>
+            <div class="gallery-grid">
+                {% for file in gallery_images %}
+                    <img src="{{ file.thumbnail_url ?? file.web_view_link ?? '#' }}" alt="Galeri" loading="lazy">
+                {% else %}
+                    <p style="text-align:center; color: var(--text-secondary);">Galeri akan segera hadir.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA banner dipindah ke bagian bawah -->
+    <section class="cta-banner fade-in-section">
+        <div class="container">
+            <div class="cta-inner">
+                <h3>Siap memulai event Anda?</h3>
+                <p>Hubungi kami untuk konsultasi gratis dan penawaran terbaik.</p>
+                <div style="display:flex; gap:12px; justify-content:center; flex-wrap: wrap;">
+                    <a class="btn-cta" href="{{ base_path }}/booking">Dapatkan Penawaran</a>
+                    <a class="btn-secondary" href="{{ base_path }}/layanan">Lihat Layanan</a>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

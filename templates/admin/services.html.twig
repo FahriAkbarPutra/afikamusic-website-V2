@@ -1,8 +1,13 @@
 {% extends "admin/layout.html.twig" %}
 
 {% block content %}
-    <div style="margin-bottom: 20px;">
-        <a href="/admin/services/new" class="btn btn-primary">Tambah Layanan Baru</a>
+    <div class="top-toolbar">
+        <div>
+            <a href="{{ base_path }}/admin/services/new" class="btn btn-primary">Tambah Layanan Baru</a>
+        </div>
+        <div class="toolbar-info">
+            {{ services|length }} layanan aktif di database
+        </div>
     </div>
 
     <table>
@@ -15,23 +20,32 @@
             </tr>
         </thead>
         <tbody>
-            {# Loop untuk setiap service dari database #}
             {% for service in services %}
             <tr>
-                <td>{{ service.name }}</td>
-                <td>Rp {{ service.price|number_format(0, ',', '.') }}</td>
-                <td>{{ service.is_active ? 'Aktif' : 'Non-Aktif' }}</td>
                 <td>
-                    <a href="/admin/services/edit/{{ service.id }}" class="btn btn-warning">Edit</a>
-                    {# Form kecil untuk tombol hapus agar lebih aman #}
-                    <form action="/admin/services/delete/{{ service.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus layanan ini?');">
-                        <button type="submit" class="btn btn-danger">Hapus</button>
-                    </form>
+                    <strong style="color: var(--admin-text);">{{ service.name }}</strong>
+                    {% if service.description %}
+                        <div style="margin-top:6px; color: var(--admin-text-muted); font-size:0.85rem;">{{ service.description|slice(0, 120) }}{% if service.description|length > 120 %}...{% endif %}</div>
+                    {% endif %}
+                </td>
+                <td style="color: var(--admin-text); font-weight:600;">Rp {{ service.price|number_format(0, ',', '.') }}</td>
+                <td>
+                    <span class="status-badge {{ service.is_active ? 'status-active' : 'status-inactive' }}">
+                        {{ service.is_active ? 'Aktif' : 'Non-Aktif' }}
+                    </span>
+                </td>
+                <td>
+                    <div class="table-actions">
+                        <a href="{{ base_path }}/admin/services/edit/{{ service.id }}" class="btn btn-warning">Edit</a>
+                        <form action="{{ base_path }}/admin/services/delete/{{ service.id }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus layanan ini?');">
+                            <button type="submit" class="btn btn-danger">Hapus</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="4" style="text-align:center;">Belum ada layanan.</td>
+                <td colspan="4" style="text-align:center; color: var(--admin-text-muted);">Belum ada layanan.</td>
             </tr>
             {% endfor %}
         </tbody>

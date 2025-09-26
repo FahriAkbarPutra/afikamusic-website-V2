@@ -1,0 +1,62 @@
+{% extends "admin/layout.html.twig" %}
+
+{% block content %}
+    <div class="top-toolbar">
+        <div>
+            <h2 style="margin:0; font-size:1.15rem;">Daftar Pesanan Masuk</h2>
+            <p class="toolbar-info">Kelola status pesanan untuk otomatis menandai kalender publik.</p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nama</th>
+                <th>Layanan</th>
+                <th>Tanggal Acara</th>
+                <th>Status</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+                <tr>
+                    <td>
+                        <strong style="color: var(--admin-text);">{{ booking.name }}</strong><br>
+                        <span style="font-size:0.8rem; color:var(--admin-text-muted);">{{ booking.phone }}</span>
+                    </td>
+                    <td>
+                        {{ booking.service_name ?? 'Tidak tersedia' }}<br>
+                        <span style="font-size:0.8rem; color:var(--admin-text-muted);">Rp {{ booking.price|number_format(0, ',', '.') }}</span>
+                    </td>
+                    <td>
+                        {{ booking.booking_date|date('d M Y') }}<br>
+                        <span style="font-size:0.8rem; color:var(--admin-text-muted);">Dibuat {{ booking.created_at|date('d M Y H:i') }}</span>
+                    </td>
+                    <td>
+                        <form action="{{ base_path }}/admin/bookings/update-status/{{ booking.id }}" method="POST" style="display:inline;">
+                            <select name="status" onchange="this.form.submit()" style="background: transparent; color: var(--admin-text); border: 1px solid rgba(7,193,255,0.35); border-radius: 999px; padding: 6px 12px;">
+                                <option value="pending" {{ booking.status == 'pending' ? 'selected' }}>Pending</option>
+                                <option value="confirmed" {{ booking.status == 'confirmed' ? 'selected' }}>Confirmed</option>
+                                <option value="cancelled" {{ booking.status == 'cancelled' ? 'selected' }}>Cancelled</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td>
+                        <details style="color: var(--admin-text-muted);">
+                            <summary style="cursor:pointer;">Detail</summary>
+                            <div style="margin-top:10px;">
+                                <p style="margin:0 0 10px;">Alamat: {{ booking.address ?: '-' }}</p>
+                                <p style="margin:0;">Catatan: {{ booking.message ?: '-' }}</p>
+                            </div>
+                        </details>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" style="text-align:center; color: var(--admin-text-muted);">Belum ada pesanan.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

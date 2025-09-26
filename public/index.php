@@ -6,6 +6,7 @@ use DI\Container;
 use Slim\Factory\AppFactory;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
+use Slim\Routing\RouteContext;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use PHPMailer\PHPMailer\PHPMailer;
@@ -18,32 +19,139 @@ $container = new Container();
 AppFactory::setContainer($container);
 $app = AppFactory::create();
 
+// Set dynamic base path for subfolder deployments (e.g., /afikamusic-website-V2/public)
+$basePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+$app->setBasePath($basePath);
+
 // 2. KONFIGURASI DEPENDENCY
 $container->set('db', function () {
     $host = 'localhost'; $dbname = 'afika_music'; $user = 'root'; $pass = '';
     try {
+        // Attempt normal connection
         $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        return $pdo;
-    } catch (PDOException $e) { die("Koneksi database gagal: " . $e->getMessage()); }
+    } catch (PDOException $e) {
+        // Auto-provision database if it's missing (SQLSTATE 1049)
+        $message = $e->getMessage();
+        $code = (int)($e->errorInfo[1] ?? 0);
+        if ($code === 1049 || stripos($message, 'Unknown database') !== false) {
+            try {
+                $rootPdo = new PDO("mysql:host=$host;charset=utf8mb4", $user, $pass);
+                $rootPdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $rootPdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbname}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                $rootPdo = null;
+                $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
+                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            } catch (PDOException $provisionEx) {
+                die("Koneksi database gagal (provision): " . $provisionEx->getMessage());
+            }
+        } else {
+            die("Koneksi database gagal: " . $message);
+        }
+    }
+
+    // Ensure minimal schema exists so the app can run on fresh installs
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS services (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            slug VARCHAR(255) NOT NULL UNIQUE,
+            price DECIMAL(10,2) NOT NULL DEFAULT 0,
+            description TEXT NULL,
+            notes TEXT NULL,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            is_featured TINYINT(1) NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS bookings (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            phone VARCHAR(50) NOT NULL,
+            service_id INT UNSIGNED NULL,
+            booking_date DATE NOT NULL,
+            address TEXT NULL,
+            message TEXT NULL,
+            price DECIMAL(10,2) NOT NULL DEFAULT 0,
+            status ENUM('pending','confirmed','cancelled') NOT NULL DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_bookings_service FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS admins (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(100) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS settings (
+            `key` VARCHAR(100) NOT NULL PRIMARY KEY,
+            `value` TEXT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS google_drive_files (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NULL,
+            mime_type VARCHAR(100) NULL,
+            web_view_link VARCHAR(500) NULL,
+            thumbnail_link VARCHAR(500) NULL,
+            is_public TINYINT(1) NOT NULL DEFAULT 1,
+            is_featured TINYINT(1) NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS schedule_events (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            client_name VARCHAR(255) NULL,
+            location VARCHAR(255) NULL,
+            start_date DATE NOT NULL,
+            end_date DATE NOT NULL,
+            status ENUM('scheduled','completed','cancelled') NOT NULL DEFAULT 'scheduled',
+            notes TEXT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    } catch (PDOException $schemaEx) {
+        // If schema creation fails, surface the reason for easier setup
+        die("Inisialisasi schema gagal: " . $schemaEx->getMessage());
+    }
+
+    return $pdo;
 });
-$container->set('view', function () {
-    return Twig::create(__DIR__ . '/../templates', ['cache' => false]);
+$container->set('view', function () use ($basePath) {
+    $twig = Twig::create(__DIR__ . '/../templates', ['cache' => false]);
+    $twig->getEnvironment()->addGlobal('base_path', $basePath);
+    $twig->getEnvironment()->addGlobal('session', $_SESSION ?? []);
+    return $twig;
 });
 $app->add(TwigMiddleware::createFromContainer($app));
+$app->add(function (Request $request, $handler) {
+    $twig = $this->get('view');
+    $twig->getEnvironment()->addGlobal('current_path', $request->getUri()->getPath());
+    return $handler->handle($request);
+});
 
 // 3. MIDDLEWARE
 $authMiddleware = function (Request $request, $handler) use ($app) {
     if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
         $response = $app->getResponseFactory()->createResponse();
-        return $response->withHeader('Location', '/afika-music/public/admin/login')->withStatus(302);
+			$base = RouteContext::fromRequest($request)->getBasePath();
+			return $response->withHeader('Location', $base . '/admin/login')->withStatus(302);
     }
     return $handler->handle($request);
 };
 
 // 4. RUTE APLIKASI
-$app->group('/afika-music/public', function ($group) use ($authMiddleware) {
+$app->group('', function ($group) use ($authMiddleware) {
+
+    // Root redirect to /home for convenience
+    $group->get('[/]', function (Request $request, Response $response) {
+		$base = RouteContext::fromRequest($request)->getBasePath();
+		return $response->withHeader('Location', $base . '/home')->withStatus(302);
+    });
 
     // Rute Publik
     $group->get('/home', function (Request $request, Response $response) {
@@ -98,7 +206,8 @@ $app->group('/afika-music/public', function ($group) use ($authMiddleware) {
         } catch (Exception $e) {
             // error_log("Mailer Error: {$mail->ErrorInfo}");
         }
-        $response->getBody()->write('<h1>Terima Kasih!</h1><p>Permintaan booking Anda telah kami terima. Tim kami akan segera menghubungi Anda untuk konfirmasi.</p><a href="/afika-music/public/home">Kembali ke Beranda</a>');
+		$base = RouteContext::fromRequest($request)->getBasePath();
+        $response->getBody()->write('<h1>Terima Kasih!</h1><p>Permintaan booking Anda telah kami terima. Tim kami akan segera menghubungi Anda untuk konfirmasi.</p><a href="' . htmlspecialchars($base . '/home') . '">Kembali ke Beranda</a>');
         return $response;
     });
    $group->get('/galeri[/]', function (Request $request, Response $response)  {
@@ -146,14 +255,17 @@ $app->group('/afika-music/public', function ($group) use ($authMiddleware) {
         if ($admin && password_verify($data['password'], $admin['password_hash'])) {
             $_SESSION['admin_logged_in'] = true;
             $_SESSION['admin_username'] = $admin['username'];
-            return $response->withHeader('Location', '/afika-music/public/admin/panel')->withStatus(302);
+			$base = RouteContext::fromRequest($request)->getBasePath();
+			return $response->withHeader('Location', $base . '/admin/panel')->withStatus(302);
         } else {
-            return $response->withHeader('Location', '/afika-music/public/admin/login?error=Username atau password salah')->withStatus(302);
+			$base = RouteContext::fromRequest($request)->getBasePath();
+			return $response->withHeader('Location', $base . '/admin/login?error=Username atau password salah')->withStatus(302);
         }
     });
     $group->get('/admin/logout', function (Request $request, Response $response) {
         session_destroy();
-        return $response->withHeader('Location', '/afika-music/public/admin/login')->withStatus(302);
+		$base = RouteContext::fromRequest($request)->getBasePath();
+		return $response->withHeader('Location', $base . '/admin/login')->withStatus(302);
     });
 
     // Rute Admin Dilindungi
@@ -176,7 +288,8 @@ $app->group('/afika-music/public', function ($group) use ($authMiddleware) {
             $sql = "INSERT INTO services (name, slug, price, description, notes, is_active) VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = $db->prepare($sql);
             $stmt->execute([$data['name'], $slug, $data['price'], $data['description'], $data['notes'], $data['is_active']]);
-            return $response->withHeader('Location', '/afika-music/public/admin/services')->withStatus(302);
+			$base = RouteContext::fromRequest($request)->getBasePath();
+			return $response->withHeader('Location', $base . '/admin/services')->withStatus(302);
         });
         $adminGroup->get('/services/edit/{id}', function (Request $request, Response $response, $args) {
             $db = $this->get('db');
@@ -192,13 +305,15 @@ $app->group('/afika-music/public', function ($group) use ($authMiddleware) {
             $sql = "UPDATE services SET name=?, slug=?, price=?, description=?, notes=?, is_active=? WHERE id=?";
             $stmt = $db->prepare($sql);
             $stmt->execute([$data['name'], $slug, $data['price'], $data['description'], $data['notes'], $data['is_active'], $args['id']]);
-            return $response->withHeader('Location', '/afika-music/public/admin/services')->withStatus(302);
+			$base = RouteContext::fromRequest($request)->getBasePath();
+			return $response->withHeader('Location', $base . '/admin/services')->withStatus(302);
         });
         $adminGroup->post('/services/delete/{id}', function (Request $request, Response $response, $args) {
             $db = $this->get('db');
             $stmt = $db->prepare("DELETE FROM services WHERE id = ?");
             $stmt->execute([$args['id']]);
-            return $response->withHeader('Location', '/afika-music/public/admin/services')->withStatus(302);
+			$base = RouteContext::fromRequest($request)->getBasePath();
+			return $response->withHeader('Location', $base . '/admin/services')->withStatus(302);
         });
         $adminGroup->get('/bookings', function (Request $request, Response $response) {
             $db = $this->get('db');
@@ -213,7 +328,8 @@ $app->group('/afika-music/public', function ($group) use ($authMiddleware) {
             $db = $this->get('db');
             $stmt = $db->prepare("UPDATE bookings SET status = ? WHERE id = ?");
             $stmt->execute([$status, $booking_id]);
-            return $response->withHeader('Location', '/afika-music/public/admin/bookings')->withStatus(302);
+			$base = RouteContext::fromRequest($request)->getBasePath();
+			return $response->withHeader('Location', $base . '/admin/bookings')->withStatus(302);
         });
         $adminGroup->get('/settings', function (Request $request, Response $response) {
             $db = $this->get('db');
@@ -229,7 +345,8 @@ $app->group('/afika-music/public', function ($group) use ($authMiddleware) {
             $sql = "INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)";
             $stmt = $db->prepare($sql);
             foreach ($data as $key => $value) { $stmt->execute([$key, $value]); }
-            return $response->withHeader('Location', '/afika-music/public/admin/settings')->withStatus(302);
+			$base = RouteContext::fromRequest($request)->getBasePath();
+			return $response->withHeader('Location', $base . '/admin/settings')->withStatus(302);
         });
     })->add($authMiddleware);
 

@@ -18,8 +18,8 @@ try {
 
 
 // --- Ganti ini ---
-$username = 'admin';
-$password = 'PasswordSangatKuat123!';
+$username = 'Admin#AfikaControl';
+$password = '/* Afikamusic#2020 */';
 // -----------------
 
 // Buat hash password yang aman

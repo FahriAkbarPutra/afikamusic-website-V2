@@ -1,5 +1,22 @@
 {% extends "admin/layout.html.twig" %}
 
 {% block content %}
-    <p>Selamat datang di Panel Admin. Silakan pilih menu di samping untuk mulai mengelola konten website.</p>
+    <div class="form-card" style="background: linear-gradient(160deg, rgba(7,13,22,0.92), rgba(7,193,255,0.12));">
+        <h2 style="margin-top:0; font-size:1.4rem;">Selamat datang, {{ session.admin_username ?? 'Admin' }} 👋</h2>
+        <p style="color: var(--admin-text-muted); max-width:580px; line-height:1.6;">Gunakan panel navigasi untuk mengelola layanan, jadwal, pesanan pelanggan, dan pengaturan website. Semua perubahan akan langsung tercermin di halaman publik.</p>
+        <div style="margin-top:28px; display:grid; gap:18px; grid-template-columns: repeat(auto-fit, minmax(200px,1fr));">
+            <div style="background: rgba(7,13,22,0.85); padding:20px; border-radius: var(--admin-radius-md); border:1px solid var(--admin-border);">
+                <h3 style="margin:0; font-size:1rem; color:var(--admin-text);">Kelola Layanan</h3>
+                <p style="margin:12px 0 0; color:var(--admin-text-muted);">Tambah atau edit paket layanan dan tampilkan di halaman beranda.</p>
+            </div>
+            <div style="background: rgba(7,13,22,0.85); padding:20px; border-radius: var(--admin-radius-md); border:1px solid var(--admin-border);">
+                <h3 style="margin:0; font-size:1rem; color:var(--admin-text);">Kelola Pesanan</h3>
+                <p style="margin:12px 0 0; color:var(--admin-text-muted);">Lihat permintaan booking masuk dan tandai jadwal yang sudah terkonfirmasi.</p>
+            </div>
+            <div style="background: rgba(7,13,22,0.85); padding:20px; border-radius: var(--admin-radius-md); border:1px solid var(--admin-border);">
+                <h3 style="margin:0; font-size:1rem; color:var(--admin-text);">Kelola Jadwal</h3>
+                <p style="margin:12px 0 0; color:var(--admin-text-muted);">Input jadwal event untuk otomatis tampil di halaman publik Jadwal.</p>
+            </div>
+        </div>
+    </div>
 {% endblock %}
