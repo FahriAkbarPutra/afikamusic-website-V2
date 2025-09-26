@@ -4,183 +4,208 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page_title|default('Admin Panel') }} - Afika Music</title>
+    <link rel="stylesheet" href="{{ base_path }}/assets/css/vendor/leaflet.css">
     <style>
         :root {
-            --admin-bg: #0d1018;
-            --admin-surface: rgba(18, 22, 33, 0.9);
-            --admin-border: rgba(255,255,255,0.07);
-            --admin-accent: #07c1ff;
-            --admin-accent-secondary: #dfff00;
-            --admin-text: #f1f5f9;
-            --admin-text-muted: #94a3b8;
-            --admin-radius-lg: 18px;
-            --admin-radius-md: 12px;
-            --admin-shadow: 0 18px 42px rgba(3,10,25,0.45);
+            --admin-bg: #f5f7fb;
+            --admin-surface: #ffffff;
+            --admin-nav-bg: #111827;
+            --admin-nav-active: #0ea5e9;
+            --admin-border: #e5e7eb;
+            --admin-text: #1f2937;
+            --admin-text-muted: #6b7280;
+            --admin-radius-md: 10px;
+            --admin-radius-lg: 16px;
+            --admin-shadow: 0 12px 28px rgba(15,23,42,0.12);
         }
 
         * { box-sizing: border-box; }
         body {
             font-family: 'Montserrat', sans-serif;
             margin: 0;
-            background: radial-gradient(1200px 600px at 50% -10%, rgba(7,193,255,0.12), rgba(13,16,24,1) 55%), #05070e;
+            background: var(--admin-bg);
             color: var(--admin-text);
-            min-height: 100vh;
         }
-        .admin-wrapper { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; position: relative; }
-        .admin-wrapper::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(1600px 600px at 50% 120%, rgba(223,255,0,0.18), rgba(13,16,24,0));
-            pointer-events: none;
-            z-index: -1;
-        }
+        .admin-wrapper { display: flex; min-height: 100vh; }
         .sidebar {
-            background: rgba(8,12,20,0.92);
-            border-right: 1px solid var(--admin-border);
-            backdrop-filter: blur(18px);
-            padding: 32px 26px;
+            width: 250px;
+            background: var(--admin-nav-bg);
+            color: #f9fafb;
             display: flex;
             flex-direction: column;
+            padding: 32px 20px;
             gap: 32px;
         }
         .sidebar h2 {
             margin: 0;
             font-size: 1.1rem;
+            text-align: center;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            text-align: center;
-            color: var(--admin-text-muted);
+            color: rgba(241,245,249,0.7);
         }
         .sidebar nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
         .sidebar nav a {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 14px 18px;
-            text-decoration: none;
-            color: var(--admin-text-muted);
-            border: 1px solid transparent;
+            display: block;
+            padding: 12px 16px;
             border-radius: var(--admin-radius-md);
-            transition: background .25s ease, border-color .25s ease, color .25s ease, transform .25s ease;
-            background: rgba(255,255,255,0.02);
+            color: rgba(241,245,249,0.85);
+            text-decoration: none;
+            transition: background .2s ease, color .2s ease;
         }
         .sidebar nav a:hover,
         .sidebar nav a.is-active {
-            color: var(--admin-text);
-            border-color: rgba(7,193,255,0.35);
-            background: linear-gradient(120deg, rgba(7,193,255,0.16), rgba(223,255,0,0.08));
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(7,193,255,0.2);
+            background: rgba(14,165,233,0.15);
+            color: #e0f2fe;
         }
         .main-content {
-            padding: 40px clamp(32px, 4vw, 64px);
-            background: linear-gradient(180deg, rgba(13,16,24,0.9), rgba(7,10,20,0.95));
+            flex: 1;
+            padding: 32px clamp(20px, 4vw, 56px);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
         }
         .header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 28px;
+            justify-content: space-between;
         }
         .header h1 {
             margin: 0;
-            font-size: clamp(1.6rem, 2vw, 2rem);
-            letter-spacing: 0.02em;
+            font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+        }
+        .content-card {
+            background: var(--admin-surface);
+            border: 1px solid var(--admin-border);
+            border-radius: var(--admin-radius-lg);
+            padding: clamp(20px, 3vw, 28px);
+            box-shadow: var(--admin-shadow);
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            background: rgba(11,15,24,0.85);
-            border: 1px solid var(--admin-border);
-            border-radius: var(--admin-radius-md);
-            overflow: hidden;
-            box-shadow: var(--admin-shadow);
         }
         th, td {
-            padding: 16px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-            color: var(--admin-text-muted);
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--admin-border);
+            font-size: 0.95rem;
         }
-        th { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--admin-text); background: rgba(7,11,19,0.95); }
-        tbody tr:hover { background: rgba(7,193,255,0.05); }
+        th {
+            text-align: left;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--admin-text-muted);
+            letter-spacing: 0.08em;
+        }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: #f0f9ff; }
         .btn {
-            padding: 10px 18px;
-            border-radius: 999px;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: none;
             font-weight: 600;
-            transition: transform .2s ease, box-shadow .25s ease, filter .2s ease;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background .2s ease, transform .2s ease;
         }
-        .btn-primary { background: linear-gradient(135deg, #07c1ff, #68e0ff); color: #030712; box-shadow: 0 12px 24px rgba(7,193,255,0.35); }
-        .btn-warning { background: linear-gradient(135deg, #facc15, #fde047); color: #111827; box-shadow: 0 12px 24px rgba(250,204,21,0.25); }
-        .btn-danger { background: linear-gradient(135deg, #f97316, #ef4444); color: #111827; box-shadow: 0 12px 24px rgba(239,68,68,0.25); }
-        .btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
-        .form-card {
-            background: rgba(11,15,24,0.85);
-            border-radius: var(--admin-radius-lg);
-            border: 1px solid var(--admin-border);
-            padding: clamp(28px, 4vw, 40px);
-            box-shadow: var(--admin-shadow);
-        }
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: var(--admin-text); letter-spacing: 0.02em; }
+        .btn-primary { background: #0ea5e9; color: #f8fafc; }
+        .btn-warning { background: #facc15; color: #1f2937; }
+        .btn-danger { background: #ef4444; color: #f8fafc; }
+        .btn:hover { transform: translateY(-1px); }
+        .btn:focus-visible { outline: 2px solid #22d3ee; outline-offset: 2px; }
+        .form-card { background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: var(--admin-radius-lg); padding: clamp(20px, 3vw, 32px); box-shadow: var(--admin-shadow); }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: var(--admin-text); }
         .form-group input,
         .form-group textarea,
         .form-group select {
             width: 100%;
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-radius: var(--admin-radius-md);
-            border: 1px solid rgba(7,193,255,0.25);
-            background: rgba(7,12,20,0.85);
-            color: var(--admin-text);
-            transition: border-color .25s ease, box-shadow .25s ease;
+            border: 1px solid var(--admin-border);
+            font-size: 0.95rem;
+            transition: border-color .2s ease, box-shadow .2s ease;
         }
+        .form-group textarea { resize: vertical; }
         .form-group input:focus,
         .form-group textarea:focus,
         .form-group select:focus {
             outline: none;
-            border-color: var(--admin-accent);
-            box-shadow: 0 0 0 3px rgba(7,193,255,0.2);
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14,165,233,0.2);
         }
         .status-badge {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
+            padding: 6px 12px;
             border-radius: 999px;
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             font-weight: 600;
         }
-        .status-active { background: rgba(34,197,94,0.15); color: #4ade80; }
-        .status-inactive { background: rgba(248,113,113,0.12); color: #fca5a5; }
-        .table-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-        .top-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
-        .top-toolbar a { text-decoration: none; }
+        .status-active { background: #dcfce7; color: #166534; }
+        .status-inactive { background: #fee2e2; color: #b91c1c; }
+        .table-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .top-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
         .toolbar-info { color: var(--admin-text-muted); font-size: 0.9rem; }
+        
+        /* Leaflet Map Styles */
+        .leaflet-map {
+            height: 300px;
+            border-radius: var(--admin-radius-md);
+            border: 1px solid var(--admin-border);
+            z-index: 1;
+            position: relative;
+            background: #f8f9fa;
+        }
+        .leaflet-container {
+            border-radius: var(--admin-radius-md);
+        }
+        .leaflet-popup-content {
+            margin: 8px 12px;
+            line-height: 1.4;
+        }
+        .location-search {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .location-search input {
+            flex: 1;
+        }
+        .location-search__btn {
+            padding: 10px 16px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
 
         @media (max-width: 960px) {
-            .admin-wrapper { grid-template-columns: 1fr; }
-            .sidebar { position: sticky; top: 0; z-index: 10; flex-direction: row; overflow-x: auto; backdrop-filter: blur(22px); border-right: none; border-bottom: 1px solid var(--admin-border); }
-            .sidebar nav ul { grid-auto-flow: column; grid-auto-columns: max-content; }
-            .sidebar nav a { border-radius: 999px; }
+            .admin-wrapper { flex-direction: column; }
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                position: sticky;
+                top: 0;
+                z-index: 20;
+            }
+            .sidebar nav ul { display: flex; gap: 10px; overflow-x: auto; }
+            .sidebar nav a { white-space: nowrap; }
         }
-        @media (max-width: 600px) {
-            .main-content { padding: 32px 20px; }
+        @media (max-width: 720px) {
+            .main-content { padding: 20px; }
             table, thead { display: none; }
-            tbody { display: grid; gap: 18px; }
-            tbody tr { display: grid; gap: 12px; border: 1px solid var(--admin-border); border-radius: var(--admin-radius-md); padding: 18px; background: rgba(11,15,24,0.9); }
-            tbody tr td { border: none; padding: 0; }
-            .table-actions { justify-content: flex-start; }
+            tbody { display: grid; gap: 16px; }
+            tbody tr { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--admin-border); border-radius: var(--admin-radius-md); background: var(--admin-surface); }
+            tbody tr td { padding: 0; border: none; }
         }
     </style>
 </head>
-<body>
+<body data-base-path="{{ base_path }}">
     <div class="admin-wrapper">
         <aside class="sidebar">
             <h2>Afika Music</h2>
@@ -199,16 +224,18 @@
             <div class="header">
                 <h1>{{ page_title|default('Dashboard') }}</h1>
             </div>
-            
-            {# Notifikasi flash (untuk pesan sukses/error) #}
+
             {% if flash %}
-            <div class="flash-{{ flash.type }}" style="padding: 15px; margin-bottom: 20px; background-color: {{ flash.type == 'success' ? '#d4edda' : '#f8d7da' }}; color: {{ flash.type == 'success' ? '#155724' : '#721c24' }}; border: 1px solid {{ flash.type == 'success' ? '#c3e6cb' : '#f5c6cb' }}; border-radius: 4px;">
-                {{ flash.message }}
-            </div>
+                <div class="content-card" style="border-left: 4px solid {{ flash.type == 'success' ? '#22c55e' : '#ef4444' }};">
+                    <strong style="display:block; margin-bottom:6px;">{{ flash.type == 'success' ? 'Berhasil' : 'Terjadi Kesalahan' }}</strong>
+                    <span style="color: var(--admin-text-muted);">{{ flash.message }}</span>
+                </div>
             {% endif %}
 
             {% block content %}{% endblock %}
         </main>
     </div>
 </body>
+<script src="{{ base_path }}/assets/js/vendor/leaflet.js"></script>
+<script src="{{ base_path }}/assets/js/main.js"></script>
 </html>

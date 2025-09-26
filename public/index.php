@@ -112,8 +112,15 @@ $container->set('db', function () {
             end_date DATE NOT NULL,
             status ENUM('scheduled','completed','cancelled') NOT NULL DEFAULT 'scheduled',
             notes TEXT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            latitude DECIMAL(10,7) NULL,
+            longitude DECIMAL(10,7) NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_schedule_unique (start_date, client_name)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // Ensure latitude & longitude columns exist for older installs
+        $pdo->exec("ALTER TABLE schedule_events ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,7) NULL AFTER notes");
+        $pdo->exec("ALTER TABLE schedule_events ADD COLUMN IF NOT EXISTS longitude DECIMAL(10,7) NULL AFTER latitude");
     } catch (PDOException $schemaEx) {
         // If schema creation fails, surface the reason for easier setup
         die("Inisialisasi schema gagal: " . $schemaEx->getMessage());
@@ -217,26 +224,18 @@ $app->group('', function ($group) use ($authMiddleware) {
     });
     $group->get('/jadwal', function (Request $request, Response $response) {
         $db = $this->get('db');
-        $stmt = $db->query("SELECT booking_date FROM bookings WHERE status = 'confirmed'");
-        $confirmed_bookings = $stmt->fetchAll();
-        $booked_dates = [];
-        foreach ($confirmed_bookings as $booking) {
-            $date = new DateTime($booking['booking_date']);
-            $booked_dates[$date->format('j-n-Y')] = true;
+        $stmt = $db->query("SELECT title, client_name, location, start_date, end_date, status, notes, latitude, longitude FROM schedule_events ORDER BY start_date ASC");
+        $events = $stmt->fetchAll();
+        $grouped = [];
+        setlocale(LC_TIME, 'id_ID.UTF-8');
+        foreach ($events as $event) {
+            $monthLabel = strftime('%B %Y', strtotime($event['start_date']));
+            $grouped[$monthLabel][] = $event;
         }
-        date_default_timezone_set('Asia/Jakarta');
-        $today = new DateTime();
-        $current_month = $today->format('n');
-        $current_year = $today->format('Y');
-        $days_in_month = cal_days_in_month(CAL_GREGORIAN, $current_month, $current_year);
-        $first_day_timestamp = strtotime("1-".$current_month."-".$current_year);
-        $first_day_of_week = date('N', $first_day_timestamp);
-        $first_day_offset = $first_day_of_week - 1;
-        $month_names = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
         return $this->get('view')->render($response, 'jadwal.html.twig', [
-            'page_title' => 'Cek Jadwal', 'booked_dates' => $booked_dates, 'days_in_month' => $days_in_month,
-            'current_month' => $current_month, 'current_year' => $current_year,
-            'first_day_offset' => $first_day_offset, 'current_month_name' => $month_names[(int)$current_month]
+            'page_title' => 'Cek Jadwal',
+            'events' => $events,
+            'grouped_events' => $grouped
         ]);
     });
 
@@ -328,8 +327,64 @@ $app->group('', function ($group) use ($authMiddleware) {
             $db = $this->get('db');
             $stmt = $db->prepare("UPDATE bookings SET status = ? WHERE id = ?");
             $stmt->execute([$status, $booking_id]);
+
+            $stmtBooking = $db->prepare("SELECT name, booking_date, address FROM bookings WHERE id = ?");
+            $stmtBooking->execute([$booking_id]);
+            $booking = $stmtBooking->fetch();
+
+            if ($booking) {
+                if ($status === 'confirmed') {
+                    $stmtSchedule = $db->prepare("INSERT INTO schedule_events (title, client_name, location, start_date, end_date, status, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE title=VALUES(title), client_name=VALUES(client_name), location=VALUES(location), start_date=VALUES(start_date), end_date=VALUES(end_date), status=VALUES(status), latitude=VALUES(latitude), longitude=VALUES(longitude)");
+                    $stmtSchedule->execute([
+                        'Event ' . $booking['name'],
+                        $booking['name'],
+                        $booking['address'],
+                        $booking['booking_date'],
+                        $booking['booking_date'],
+                        'scheduled',
+                        null,
+                        null
+                    ]);
+                } else {
+                    $stmtDelete = $db->prepare("DELETE FROM schedule_events WHERE start_date = ? AND client_name = ?");
+                    $stmtDelete->execute([$booking['booking_date'], $booking['name']]);
+                }
+            }
 			$base = RouteContext::fromRequest($request)->getBasePath();
 			return $response->withHeader('Location', $base . '/admin/bookings')->withStatus(302);
+        });
+        $adminGroup->get('/schedule', function (Request $request, Response $response) {
+            $db = $this->get('db');
+            $events = $db->query("SELECT * FROM schedule_events ORDER BY start_date DESC")->fetchAll();
+            return $this->get('view')->render($response, 'admin/schedule.html.twig', [
+                'page_title' => 'Kelola Jadwal',
+                'events' => $events
+            ]);
+        });
+        $adminGroup->post('/schedule/new', function (Request $request, Response $response) {
+            $data = $request->getParsedBody();
+            $db = $this->get('db');
+            $stmt = $db->prepare("INSERT INTO schedule_events (title, client_name, location, start_date, end_date, status, notes, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $data['title'],
+                $data['client_name'],
+                $data['location'],
+                $data['start_date'],
+                $data['end_date'],
+                $data['status'],
+                $data['notes'],
+                $data['latitude'] ?? null,
+                $data['longitude'] ?? null
+            ]);
+		$base = RouteContext::fromRequest($request)->getBasePath();
+		return $response->withHeader('Location', $base . '/admin/schedule')->withStatus(302);
+        });
+        $adminGroup->post('/schedule/delete/{id}', function (Request $request, Response $response, $args) {
+            $db = $this->get('db');
+            $stmt = $db->prepare("DELETE FROM schedule_events WHERE id = ?");
+            $stmt->execute([$args['id']]);
+		$base = RouteContext::fromRequest($request)->getBasePath();
+		return $response->withHeader('Location', $base . '/admin/schedule')->withStatus(302);
         });
         $adminGroup->get('/settings', function (Request $request, Response $response) {
             $db = $this->get('db');

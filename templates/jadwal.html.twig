@@ -1,0 +1,413 @@
+{% extends "layout.html.twig" %}
+
+{% block content %}
+<section class="schedule-hero fade-in-section">
+    <div class="schedule-hero__content container">
+        <h1>Jadwal Event</h1>
+        <p>Pantau tanggal yang sudah terisi dan rencanakan event Anda bersama Afika Audio Production.</p>
+    </div>
+</section>
+
+<section class="schedule-section">
+    <div class="schedule-container container">
+        {% if grouped_events %}
+            {% for month, events in grouped_events %}
+                {% set monthIndex = loop.index0 %}
+                <section class="schedule-month">
+                    <header class="schedule-month__header">
+                        <h2>{{ month|title }}</h2>
+                    </header>
+
+                    <div class="schedule-grid">
+                        {% for event in events %}
+                            {% set eventIndex = loop.index0 %}
+                            {% set mapId = 'event-map-' ~ monthIndex ~ '-' ~ eventIndex %}
+                            {% set hasCoords = event.latitude is not null and event.longitude is not null %}
+
+                            <article class="schedule-card fade-in-section">
+                                <div class="schedule-card__body">
+                                    <div class="schedule-card__header">
+                                        <div class="event-date">
+                                            <span class="day-abbr">{{ event.start_date|date('D')|slice(0,2) }}</span>
+                                            <div class="date-range">
+                                                {{ event.start_date|date('d M Y') }}
+                                                {% if event.end_date and event.end_date != event.start_date %}
+                                                    – {{ event.end_date|date('d M Y') }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="event-details">
+                                        {% if event.location %}
+                                            <div class="detail-item">
+                                                <span class="label">Lokasi:</span>
+                                                <span class="value">{{ event.location }}</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if event.client_name %}
+                                            <div class="detail-item">
+                                                <span class="label">Klien:</span>
+                                                <span class="value">{{ event.client_name }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if event.notes %}
+                                        <div class="event-notes">"{{ event.notes }}"</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="schedule-card__map">
+                                    {% if hasCoords %}
+                                        <iframe
+                                            id="{{ mapId }}"
+                                            src="https://maps.google.com/maps?q={{ event.latitude }},{{ event.longitude }}&z=15&output=embed"
+                                            loading="lazy"
+                                            allowfullscreen
+                                            referrerpolicy="no-referrer-when-downgrade"></iframe>
+                                        <div class="map-actions">
+                                            <a href="https://www.google.com/maps/dir/?api=1&destination={{ event.latitude }},{{ event.longitude }}" target="_blank" class="directions-btn">
+                                                <span>🗺️ Petunjuk Arah</span>
+                                            </a>
+                                        </div>
+                                    {% else %}
+                                        <div class="schedule-map__placeholder">
+                                            <p>Koordinat belum tersedia.</p>
+                                            <small>Gunakan tombol di atas untuk mencari lokasi.</small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endfor %}
+        {% else %}
+            <div class="schedule-empty">
+                <span>📅</span>
+                <h3>Belum ada event yang terjadwal</h3>
+                <p>Segera booking tanggal favorit Anda sebelum diambil orang lain.</p>
+                <a href="{{ base_path }}/booking" class="btn-primary">Booking Sekarang</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<style>
+    .schedule-hero {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 80vh;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .schedule-hero::before {
+        content: "";
+        position: absolute;
+        inset: -10% -10% auto -10%;
+        height: 70%;
+        background: radial-gradient(1000px 500px at 50% 0%, rgba(0,191,255,.18), rgba(223,255,0,.08) 40%, rgba(0,0,0,0) 70%);
+        filter: blur(10px);
+        pointer-events: none;
+    }
+    .schedule-hero__content {
+        position: relative;
+        z-index: 2;
+        padding: 20px;
+    }
+    .schedule-hero__content h1 {
+        font-size: clamp(2rem, 4vw + 1rem, 3.5rem);
+        font-weight: 700;
+        margin-bottom: 10px;
+        line-height: 1.1;
+        background: linear-gradient(135deg, #38bdf8, #fbbf24);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: none;
+    }
+    .schedule-hero__content p {
+        font-size: clamp(1rem, .6vw + .6rem, 1.2rem);
+        margin-bottom: 30px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        color: var(--text-secondary);
+    }
+
+    .schedule-section {
+        padding: 80px 0;
+        background: transparent;
+        position: relative;
+        overflow: hidden;
+    }
+    .schedule-section::before {
+        content: "";
+        position: absolute;
+        left: -20%;
+        right: -20%;
+        top: -60%;
+        bottom: -110%;
+        background: radial-gradient(1000px 380px at 50% 110%, rgba(0,191,255,.18) 0%, rgba(223,255,0,.12) 40%, rgba(0,0,0,0) 78%);
+        filter: blur(16px);
+        pointer-events: none;
+        z-index: -1;
+    }
+    .schedule-container {
+        display: grid;
+        gap: 32px;
+    }
+    .schedule-month {
+        backdrop-filter: blur(14px);
+        background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(251,191,36,0.08));
+        border: 1px solid rgba(56,189,248,0.15);
+        border-radius: 16px;
+        padding: clamp(24px, 4vw, 36px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+    .schedule-month__header {
+        margin-bottom: clamp(16px, 2vw, 24px);
+        color: var(--text-primary);
+    }
+    .schedule-month__header h2 {
+        margin: 0;
+        font-size: clamp(1.3rem, 4vw, 1.6rem);
+        font-weight: 600;
+    }
+
+    .schedule-grid {
+        display: grid;
+        gap: clamp(16px, 3vw, 24px);
+    }
+
+    .schedule-card {
+        display: grid;
+        gap: clamp(16px, 2vw, 24px);
+        padding: clamp(20px, 3vw, 28px);
+        background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(251,191,36,0.08));
+        border: 1px solid rgba(56,189,248,0.15);
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    .schedule-card__header {
+        margin-bottom: 12px;
+    }
+
+    .event-date {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .day-abbr {
+        background: linear-gradient(135deg, #38bdf8, #fbbf24);
+        color: #0f172a;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .date-range {
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+
+    .event-details {
+        margin-bottom: 12px;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 8px;
+    }
+
+    .detail-item .label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+    }
+
+    .detail-item .value {
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        font-weight: 400;
+    }
+
+    .event-notes {
+        background: var(--bg-card);
+        border-left: 3px solid rgba(0,191,255,0.6);
+        padding: 12px 16px;
+        margin: 12px 0;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-style: italic;
+        border-radius: 8px;
+    }
+
+    .schedule-card__map {
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        min-height: 200px;
+        background: var(--bg-card);
+        margin-top: 16px;
+    }
+
+    .schedule-card__map iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    .map-actions {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,0.7));
+        padding: 16px 12px 12px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    .directions-btn {
+        background: linear-gradient(135deg, #38bdf8, #fbbf24);
+        color: #0f172a;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: transform 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .directions-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    }
+
+    .schedule-map__placeholder {
+        display: grid;
+        place-items: center;
+        gap: 6px;
+        height: 100%;
+        color: var(--text-secondary);
+        text-align: center;
+        padding: 24px;
+    }
+    .schedule-map__placeholder p {
+        margin: 0;
+        font-weight: 600;
+    }
+    .schedule-map__placeholder small {
+        color: var(--text-secondary);
+    }
+
+    .schedule-empty {
+        text-align: center;
+        background: var(--bg-card);
+        border: 1px dashed var(--border-color);
+        border-radius: 12px;
+        padding: clamp(40px, 8vw, 64px);
+        color: var(--text-primary);
+        display: grid;
+        gap: 18px;
+        justify-items: center;
+    }
+    .schedule-empty span {
+        font-size: clamp(2.5rem, 5vw, 3.5rem);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #38bdf8, #2563eb);
+        color: #0f172a;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: transform 0.2s ease;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+        .schedule-hero {
+            padding: clamp(40px, 8vh, 80px) 0 clamp(20px, 4vh, 40px);
+        }
+        .schedule-hero__content h1 {
+            font-size: clamp(1.8rem, 5vw, 2.2rem);
+        }
+        .schedule-hero__content p {
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            padding: 0 1rem;
+        }
+        
+        .schedule-section {
+            padding: clamp(20px, 4vw, 40px) 0;
+        }
+        .schedule-container {
+            gap: clamp(16px, 3vw, 24px);
+        }
+        .schedule-month {
+            margin: 0 0.5rem;
+            padding: clamp(16px, 2vw, 20px);
+        }
+        .schedule-card {
+            margin: 0 0.25rem;
+            padding: clamp(14px, 2vw, 18px);
+        }
+        .schedule-card__map {
+            min-height: 180px;
+        }
+        .map-actions {
+            padding: 12px 10px 10px;
+        }
+        .directions-btn {
+            padding: 6px 10px;
+            font-size: 0.75rem;
+        }
+        .google-logo {
+            height: 10px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .schedule-hero__content {
+            padding: 0 1rem;
+        }
+        .schedule-month {
+            margin: 0 0.25rem;
+        }
+        .schedule-card {
+            margin: 0;
+        }
+        .event-date {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .day-abbr {
+            align-self: flex-start;
+        }
+    }
+</style>
+{% endblock %}

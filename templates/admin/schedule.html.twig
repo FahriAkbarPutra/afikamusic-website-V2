@@ -1,0 +1,124 @@
+{% extends "admin/layout.html.twig" %}
+
+{% block content %}
+    <div class="top-toolbar">
+        <div>
+            <h2 style="margin:0; font-size:1.1rem;">Kelola Jadwal Event</h2>
+            <p class="toolbar-info">Tambahkan jadwal baru atau hapus jadwal yang sudah selesai.</p>
+        </div>
+    </div>
+
+    <div class="form-card" style="margin-bottom:24px;">
+        <form action="{{ base_path }}/admin/schedule/new" method="POST" style="display:grid; gap:16px;">
+            <div class="form-group">
+                <label for="title">Judul Event</label>
+                <input type="text" id="title" name="title" placeholder="Contoh: Wedding Jane & John" required>
+            </div>
+            <div class="form-group">
+                <label for="client_name">Nama Klien</label>
+                <input type="text" id="client_name" name="client_name" placeholder="Nama klien" required>
+            </div>
+            <div class="form-group" style="display:grid; gap:8px;">
+                <label for="location">Lokasi</label>
+                <div class="location-search">
+                    <input type="text" id="location" name="location" placeholder="Lokasi acara" required>
+                    <button class="btn btn-primary location-search__btn" type="button" id="location-search">Cari</button>
+                </div>
+                <small id="location-search-status" style="color: var(--admin-text-muted);">Ketik alamat lalu tekan cari untuk mengisi koordinat otomatis.</small>
+            </div>
+            <div style="display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(160px,1fr));">
+                <div class="form-group">
+                    <label for="start_date">Mulai</label>
+                    <input type="date" id="start_date" name="start_date" required>
+                </div>
+                <div class="form-group">
+                    <label for="end_date">Selesai</label>
+                    <input type="date" id="end_date" name="end_date" required>
+                </div>
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status" name="status">
+                        <option value="scheduled">Scheduled</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="notes">Catatan</label>
+                <textarea id="notes" name="notes" rows="3" placeholder="Catatan tambahan (opsional)"></textarea>
+            </div>
+
+            <div class="form-group" style="display:grid; gap:12px;">
+                <label>Pilih Lokasi di Peta</label>
+                <div id="schedule-map" class="leaflet-map"></div>
+                <div style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(150px,1fr));">
+                    <div class="form-group" style="margin:0;">
+                        <label for="latitude">Latitude</label>
+                        <input type="text" id="latitude" name="latitude" readonly>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label for="longitude">Longitude</label>
+                        <input type="text" id="longitude" name="longitude" readonly>
+                    </div>
+                </div>
+                <small style="color: var(--admin-text-muted);">Geser marker untuk menentukan titik lokasi. Koordinat akan otomatis terisi.</small>
+            </div>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                <button type="submit" class="btn btn-primary">Simpan Jadwal</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="content-card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Event</th>
+                    <th>Tanggal</th>
+                    <th>Status</th>
+                    <th>Map</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                    <tr>
+                        <td>
+                            <strong>{{ event.title }}</strong><br>
+                            <span style="color: var(--admin-text-muted); font-size:0.85rem;">Klien: {{ event.client_name }}</span><br>
+                            <span style="color: var(--admin-text-muted); font-size:0.85rem;">Lokasi: {{ event.location }}</span><br>
+                            <span style="color: var(--admin-text-muted);">{{ event.notes ?: '-' }}</span>
+                        </td>
+                        <td>
+                            {{ event.start_date|date('d M Y') }}
+                            {% if event.end_date and event.end_date != event.start_date %}
+                                – {{ event.end_date|date('d M Y') }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="status-badge {{ event.status == 'scheduled' ? 'status-active' : 'status-inactive' }}">{{ event.status|title }}</span>
+                        </td>
+                        <td>
+                            {% if event.latitude and event.longitude %}
+                                <iframe src="https://maps.google.com/maps?q={{ event.latitude }},{{ event.longitude }}&z=15&output=embed" width="230" height="170" style="border:0; border-radius:12px;" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+                            {% else %}
+                                <span style="color: var(--admin-text-muted); font-size:0.85rem;">Belum ada pin lokasi.</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form action="{{ base_path }}/admin/schedule/delete/{{ event.id }}" method="POST" onsubmit="return confirm('Hapus jadwal ini?');">
+                                <button type="submit" class="btn btn-danger">Hapus</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align:center; color: var(--admin-text-muted);">Belum ada jadwal.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
